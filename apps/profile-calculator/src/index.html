@@ -1,0 +1,165 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="測点と縦断線形から、直線勾配・縦断曲線・起終点の延長上の計画高を求める測量計算ツール。">
+  <meta name="theme-color" content="#2D3082">
+  <link rel="icon" href="{{MARK}}">
+  <title>縦断高さ計算 | CREASTUDIO</title>
+  <style>/*{{STYLE}}*/</style>
+</head>
+<body>
+  <header class="topbar">
+    <button type="button" id="menu-toggle" class="icon-button menu-toggle" aria-label="路線メニューを開く" aria-controls="sidebar" aria-expanded="false"><span class="icon i-menu" aria-hidden="true"></span></button>
+    <img src="{{LOGO}}" alt="CREASTUDIO" class="brand">
+    <span class="topbar-rule" aria-hidden="true"></span>
+    <span class="app-name">縦断高さ計算</span>
+    <button type="button" id="top-help" class="button plain top-help"><span class="icon i-help" aria-hidden="true"></span>使い方</button>
+  </header>
+
+  <div class="workspace">
+    <button type="button" id="drawer-backdrop" class="drawer-backdrop" aria-label="路線メニューを閉じる" hidden></button>
+    <aside id="sidebar" class="sidebar" aria-label="路線メニュー">
+      <div class="sidebar-main">
+        <h2>路線プロジェクト</h2>
+        <button type="button" id="new-project" class="button primary new-project"><span class="icon i-plus" aria-hidden="true"></span>新規路線</button>
+        <nav id="project-list" class="project-list" aria-label="保存した路線"></nav>
+      </div>
+      <div class="sidebar-bottom">
+        <button type="button" id="import-project" class="button plain sidebar-action"><span class="icon i-upload" aria-hidden="true"></span>路線を読み込む</button>
+        <button type="button" id="side-help" class="button plain sidebar-action"><span class="icon i-help" aria-hidden="true"></span>使い方</button>
+        <p class="device-note"><span class="icon i-device" aria-hidden="true"></span>このブラウザに保存</p>
+      </div>
+    </aside>
+    <input type="file" id="import-file" accept=".json,application/json" hidden>
+
+    <main id="main">
+      <header class="project-header">
+        <div class="project-title">
+          <div class="section-label"><span class="icon i-folder" aria-hidden="true"></span>路線プロジェクト</div>
+          <h1 id="project-name"></h1>
+        </div>
+        <div class="project-actions">
+          <span id="save-state" class="save-state" role="status"></span>
+          <button type="button" id="project-settings" class="button secondary"><span class="icon i-settings" aria-hidden="true"></span>路線設定</button>
+        </div>
+      </header>
+
+      <section class="overview" aria-label="路線の概要">
+        <div class="metric"><span class="metric-icon distance-symbol" aria-hidden="true">↔</span><div><div class="metric-label">路線延長</div><div class="metric-value"><span id="metric-length">—</span><span class="metric-unit">m</span></div></div></div>
+        <div class="metric"><span class="metric-icon input-symbol" aria-hidden="true"></span><div><div class="metric-label">入力点</div><div class="metric-value"><span id="metric-input">—</span><span class="metric-unit">点</span></div></div></div>
+        <div class="metric"><span class="metric-icon target-symbol" aria-hidden="true"></span><div><div class="metric-label">計算点</div><div class="metric-value"><span id="metric-target">—</span><span class="metric-unit">点</span></div></div></div>
+      </section>
+
+      <section class="card chart-card" aria-labelledby="chart-title">
+        <div class="card-header chart-header">
+          <h2 id="chart-title"><span class="icon i-chart" aria-hidden="true"></span>縦断図</h2>
+          <ul class="legend" aria-label="凡例">
+            <li><span class="legend-mark input-dot"></span>入力点</li>
+            <li><span class="legend-mark target-dot"></span>計算点</li>
+            <li><span class="legend-mark curve-line"></span>縦断曲線</li>
+            <li><span class="legend-mark extension-line"></span>延長区間</li>
+          </ul>
+        </div>
+        <div id="chart-wrap" class="chart-wrap">
+          <canvas id="profile-chart" role="img" aria-label="縦断図。数値は計算結果一覧で確認できます。"></canvas>
+          <div id="chart-empty" class="chart-empty" hidden><span class="icon i-chart" aria-hidden="true"></span><p>入力点を登録すると縦断図が表示されます</p></div>
+          <div id="chart-tooltip" class="chart-tooltip" aria-hidden="true" hidden></div>
+        </div>
+      </section>
+
+      <div class="edit-grid">
+        <section class="card editor-card" aria-labelledby="control-title">
+          <div class="card-header editor-header"><h2 id="control-title"><span class="heading-dot input-dot"></span>入力点</h2><button type="button" id="add-control" class="button secondary small"><span class="icon i-plus" aria-hidden="true"></span>入力点を追加</button></div>
+          <p class="editor-note">測点と高さを入力します。縦断曲線を設ける点には曲線長も入力します。</p>
+          <div class="form-table">
+            <div class="form-head control-layout" aria-hidden="true"><span>測点</span><span>高さ (m)</span><span>曲線長 (m)</span><span></span></div>
+            <div id="control-rows"></div>
+          </div>
+          <p id="alignment-error" class="inline-error" aria-live="polite" hidden></p>
+        </section>
+
+        <section class="card editor-card" aria-labelledby="target-title">
+          <div class="card-header editor-header"><h2 id="target-title"><span class="heading-dot target-dot"></span>計算点</h2><button type="button" id="add-target" class="button secondary small"><span class="icon i-plus" aria-hidden="true"></span>計算点を追加</button></div>
+          <p class="editor-note">高さを求めたい測点を入力します。起点の前や終点の先も計算できます。</p>
+          <div class="form-table">
+            <div class="form-head target-layout" aria-hidden="true"><span>測点</span><span>計画高 (m)</span><span></span><span></span></div>
+            <div id="target-rows"></div>
+          </div>
+          <div class="editor-footer">
+            <span id="spacing-summary" class="muted"></span>
+            <button type="button" id="show-results" class="button primary">計算結果を見る<span aria-hidden="true">↓</span></button>
+          </div>
+        </section>
+      </div>
+
+      <section class="card results-card" id="results" aria-labelledby="results-title">
+        <div class="card-header"><h2 id="results-title" tabindex="-1"><span class="icon i-list" aria-hidden="true"></span>計算結果</h2><span id="results-count" class="muted"></span></div>
+        <div id="result-table-wrap" class="result-table-wrap" hidden>
+          <table role="table" aria-labelledby="results-title">
+            <thead><tr><th scope="col">区分</th><th scope="col">測点</th><th scope="col" class="number">高さ (m)</th><th scope="col" class="number">累加距離 (m)</th><th scope="col" class="number">勾配 (%)</th><th scope="col">線形</th></tr></thead>
+            <tbody id="result-rows"></tbody>
+          </table>
+        </div>
+        <p id="results-empty" class="results-empty">入力点を登録すると結果が表示されます。</p>
+      </section>
+      <footer class="main-footer"><img src="{{MARK}}" alt="" width="18" height="20">CREASTUDIO</footer>
+    </main>
+  </div>
+
+  <dialog id="project-dialog" aria-labelledby="dialog-title">
+    <form id="project-form">
+      <header class="dialog-header"><h2 id="dialog-title"></h2><button type="button" class="icon-button close-dialog" aria-label="閉じる"><span class="icon i-close" aria-hidden="true"></span></button></header>
+      <label class="dialog-field">路線名<input id="edit-name" type="text" required maxlength="80" autocomplete="off"></label>
+      <label class="dialog-field">測点間隔 (m)<input id="edit-spacing" type="text" inputmode="decimal" required aria-describedby="spacing-help"></label>
+      <p id="spacing-help" class="muted">No. 形式を累加距離に換算する間隔です。20 m の場合、No.8+5.5 は 165.5 m になります。</p>
+      <p id="settings-error" class="inline-error" role="alert" hidden></p>
+      <div id="settings-tools" class="settings-tools">
+        <button type="button" id="export-project" class="button secondary"><span class="icon i-download" aria-hidden="true"></span>バックアップ</button>
+        <button type="button" id="delete-project" class="button danger">路線を削除</button>
+      </div>
+      <footer class="dialog-footer"><button type="button" class="button secondary close-dialog">キャンセル</button><button type="submit" id="submit-project" class="button primary"></button></footer>
+    </form>
+  </dialog>
+
+  <dialog id="help-dialog" aria-labelledby="help-title">
+    <header class="dialog-header"><h2 id="help-title">使い方</h2><button type="button" class="icon-button close-dialog" aria-label="閉じる"><span class="icon i-close" aria-hidden="true"></span></button></header>
+    <dl class="help-list">
+      <dt>測点の書き方</dt><dd><b>SP160.5</b> と <b>160.5</b> は累加距離 160.5 m です。測点間隔が 20 m のとき、<b>No.8+5.5</b> は 165.5 m です。起点前の計算には <b>SP-20</b> のような負の距離も入力できます。</dd>
+      <dt>直線区間と延長区間</dt><dd>入力点を累加距離順に並べて高さを補間します。起点より前は最初の勾配、終点より先は最後の勾配を延長します。</dd>
+      <dt>縦断曲線（バーチカル）</dt><dd>内側の勾配変化点に、前後の勾配線の交点（PVI）の高さと曲線長を入力します。曲線の始点と終点は PVI からそれぞれ曲線長の半分の位置です。PVI と同じ測点を計算点に入れると、曲線上の計画高を確認できます。</dd>
+      <dt>路線の保存と引き継ぎ</dt><dd>入力内容はこの端末のブラウザに自動保存されます。別の端末で使う場合は「路線設定」でバックアップを保存し、移動先で「路線を読み込む」を選んでください。</dd>
+    </dl>
+    <footer class="dialog-footer"><button type="button" class="button primary close-dialog">閉じる</button></footer>
+  </dialog>
+  <dialog id="calculator-dialog" class="calculator-dialog" aria-labelledby="calculator-title">
+    <header class="dialog-header"><div><p id="calculator-context" class="calculator-context">計算点</p><h2 id="calculator-title">関数電卓</h2></div><button type="button" class="icon-button close-dialog" aria-label="閉じる"><span class="icon i-close" aria-hidden="true"></span></button></header>
+    <div class="calculator-panels">
+      <section class="calculator-panel" aria-labelledby="scientific-title">
+        <h3 id="scientific-title">関数電卓</h3>
+        <label class="sr-only" for="calculator-expression">計算式</label><input id="calculator-expression" class="calculator-expression" type="text" inputmode="decimal" autocomplete="off" spellcheck="false" placeholder="例: (12 + 8) / 2" aria-describedby="calculator-result">
+        <p id="calculator-result" class="calculator-result" aria-live="polite">式を入力するか、ボタンを押してください。</p>
+        <div id="calculator-keys" class="calculator-keys" aria-label="電卓キー"></div>
+        <div class="calculator-demo-controls" aria-label="計算操作の再生">
+          <button type="button" id="calculator-demo-back" class="button secondary small" aria-label="1操作戻る" title="1操作戻る">◀| 戻る</button>
+          <button type="button" id="calculator-demo-play" class="button primary small" aria-label="計算操作を再生" title="計算操作を再生">▶ 再生</button>
+          <button type="button" id="calculator-demo-pause" class="button secondary small" aria-label="再生を一時停止" title="再生を一時停止">Ⅱ 一時停止</button>
+          <button type="button" id="calculator-demo-forward" class="button secondary small" aria-label="1操作進む" title="1操作進む">進む |▶</button>
+        </div>
+        <p id="calculator-demo-status" class="demo-status" role="status" aria-live="polite"></p>
+        <div class="calculator-actions"><button type="button" id="calculator-copy-result" class="button secondary small">結果をコピー</button><button type="button" id="calculator-equals" class="button primary small">計算する</button></div><p id="calculator-copy-status" class="copy-status" role="status" aria-live="polite"></p>
+      </section>
+      <section class="calculator-panel formula-panel" aria-labelledby="formula-title">
+        <div class="formula-heading"><div><h3 id="formula-title">計画高の計算式</h3><p class="muted">入力した計算点に適用される式</p></div><button type="button" id="copy-formula" class="button secondary small"><span class="icon i-copy" aria-hidden="true"></span>式をコピー</button></div>
+        <pre id="formula-text" class="formula-text" tabindex="0"></pre>
+        <p id="formula-copy-status" class="copy-status" role="status" aria-live="polite"></p>
+      </section>
+    </div>
+    <footer class="dialog-footer"><button type="button" class="button secondary close-dialog">閉じる</button></footer>
+  </dialog>
+  <div id="toast" class="toast" role="status" hidden></div>
+  <script>/*{{SCRIPT}}*/</script>
+</body>
+</html>
+
