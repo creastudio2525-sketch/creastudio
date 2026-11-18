@@ -231,6 +231,15 @@
     return lines.join('\n');
   }
 
+  function renderFormula(text) {
+    const element = byId('formula-text');
+    const lines = text.split('\n');
+    element.replaceChildren(...lines.flatMap((line, index) => [
+      line.startsWith('計画高 H = ') ? make('strong', 'formula-answer', line) : document.createTextNode(line),
+      ...(index < lines.length - 1 ? [document.createTextNode('\n')] : []),
+    ]));
+  }
+
   function targetCalculatorExpression(index) {
     const project = active();
     const distance = Profile.parseStation(project.targets[index], project.spacing);
@@ -356,10 +365,10 @@
     byId('calculator-context').textContent = '計算点 ' + (index + 1) + '：' + (active().targets[index] || '測点未入力');
     byId('formula-copy-status').textContent = '';
     try {
-      byId('formula-text').textContent = targetFormula(index);
+      renderFormula(targetFormula(index));
       prepareCalculatorDemo(targetCalculatorExpression(index));
     } catch (error) {
-      byId('formula-text').textContent = '計画高の式を表示できません。\n' + error.message + '\n\n計算点の測点を入力し、入力点を2点以上登録してください。';
+      renderFormula('計画高の式を表示できません。\n' + error.message + '\n\n計算点の測点を入力し、入力点を2点以上登録してください。');
       prepareCalculatorDemo('');
     }
     calculatorDialog.showModal();
