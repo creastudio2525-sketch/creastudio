@@ -265,8 +265,14 @@
     };
   }
 
+  function resizeCalculatorExpression() {
+    calculatorExpression.style.height = 'auto';
+    calculatorExpression.style.height = Math.min(Math.max(calculatorExpression.scrollHeight, 76), 180) + 'px';
+  }
+
   function restoreDemoSnapshot(snapshot) {
     calculatorExpression.value = snapshot.expression;
+    resizeCalculatorExpression();
     byId('calculator-result').textContent = snapshot.result;
     if (snapshot.value === undefined) delete calculatorExpression.dataset.result;
     else calculatorExpression.dataset.result = snapshot.value;
@@ -288,6 +294,7 @@
     calculatorDemoHistory = [];
     calculatorDemoIndex = 0;
     calculatorExpression.value = '';
+    resizeCalculatorExpression();
     delete calculatorExpression.dataset.result;
     byId('calculator-result').textContent = '式を入力するか、ボタンを押してください。';
     updateDemoControls(Boolean(expression));
@@ -443,13 +450,14 @@
       button.addEventListener('click', () => {
         cancelCalculatorDemoForManualInput();
         if (label === '=') { runCalculator(); return; }
-        if (label === 'AC') { calculatorExpression.value = ''; delete calculatorExpression.dataset.result; byId('calculator-result').textContent = '式を入力するか、ボタンを押してください。'; calculatorExpression.focus(); return; }
+        if (label === 'AC') { calculatorExpression.value = ''; resizeCalculatorExpression(); delete calculatorExpression.dataset.result; byId('calculator-result').textContent = '式を入力するか、ボタンを押してください。'; calculatorExpression.focus(); return; }
         const start = calculatorExpression.selectionStart ?? calculatorExpression.value.length;
         const end = calculatorExpression.selectionEnd ?? start;
         if (label === '⌫') {
           if (start === end && start > 0) calculatorExpression.setRangeText('', start - 1, end, 'end');
           else calculatorExpression.setRangeText('', start, end, 'end');
         } else calculatorExpression.setRangeText(label === '√(' ? 'sqrt(' : label, start, end, 'end');
+        resizeCalculatorExpression();
         delete calculatorExpression.dataset.result;
         calculatorExpression.focus();
       });
@@ -473,7 +481,7 @@
   byId('calculator-demo-forward').addEventListener('click', stepCalculatorDemoForward);
   byId('calculator-equals').addEventListener('click', runCalculator);
   calculatorExpression.addEventListener('keydown', (event) => { if (event.key === 'Enter') { event.preventDefault(); runCalculator(); } });
-  calculatorExpression.addEventListener('input', () => { delete calculatorExpression.dataset.result; cancelCalculatorDemoForManualInput(); });
+  calculatorExpression.addEventListener('input', () => { resizeCalculatorExpression(); delete calculatorExpression.dataset.result; cancelCalculatorDemoForManualInput(); });
   byId('copy-formula').addEventListener('click', () => copyText(byId('formula-text').textContent, byId('formula-copy-status')));
   byId('calculator-copy-result').addEventListener('click', () => {
     if (!calculatorExpression.dataset.result) runCalculator();
