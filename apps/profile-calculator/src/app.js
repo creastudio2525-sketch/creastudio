@@ -209,6 +209,9 @@
     const lines = ['測点: ' + (station || '（未入力）'), '累加距離 x = ' + formulaNumber(normalizedStation) + ' m', ''];
     if (curve) {
       const offset = Math.max(0, Math.min(curve.length, normalizedStation - curve.begin));
+      const gradeChange = curve.outgoing - curve.incoming;
+      const tangentRise = curve.incoming * offset;
+      const curveCorrection = gradeChange * offset ** 2 / (2 * curve.length);
       lines.push('縦断曲線（放物線）');
       lines.push('この式の見方: 曲線始点の高さに、始点から進んだ距離分の高さの増分を加えます。曲線内では勾配が g1 から g2 へ少しずつ変わるため、その変化分も加味します。');
       lines.push('記号: H は計画高、Hs は曲線始点の高さ、d は曲線始点から計算点までの距離、g1 は曲線に入る勾配、g2 は曲線を出る勾配、L は曲線長です。勾配 g1・g2 は m/m で表します。');
@@ -216,16 +219,27 @@
       lines.push('Hs = ' + formulaNumber(curve.beginHeight) + ' m, g1 = ' + formulaNumber(curve.incoming) + ', g2 = ' + formulaNumber(curve.outgoing) + ', L = ' + formulaNumber(curve.length) + ' m');
       lines.push('d = x − 曲線始点 = ' + formulaNumber(normalizedStation) + ' − ' + formulaNumber(curve.begin) + ' = ' + formulaNumber(offset) + ' m');
       lines.push('H = ' + formulaNumber(curve.beginHeight) + ' + ' + formulaNumber(curve.incoming) + ' × ' + formulaNumber(offset) + ' + (' + formulaNumber(curve.outgoing) + ' − ' + formulaNumber(curve.incoming) + ') × ' + formulaNumber(offset) + '² / (2 × ' + formulaNumber(curve.length) + ')');
+      lines.push('', '途中計算');
+      lines.push('1) 曲線内の勾配変化 Δg = g2 − g1 = ' + formulaNumber(curve.outgoing) + ' − ' + formulaNumber(curve.incoming) + ' = ' + formulaNumber(gradeChange));
+      lines.push('2) 始点勾配による高さ増分 = g1 × d = ' + formulaNumber(curve.incoming) + ' × ' + formulaNumber(offset) + ' = ' + formulaNumber(tangentRise) + ' m');
+      lines.push('3) 曲線による補正量 = Δg × d² / (2 × L) = ' + formulaNumber(gradeChange) + ' × ' + formulaNumber(offset) + '² / (2 × ' + formulaNumber(curve.length) + ') = ' + formulaNumber(curveCorrection) + ' m');
+      lines.push('4) 計画高 H = Hs + 高さ増分 + 補正量 = ' + formulaNumber(curve.beginHeight) + ' + (' + formulaNumber(tangentRise) + ') + (' + formulaNumber(curveCorrection) + ') = ' + formulaNumber(curve.beginHeight + tangentRise + curveCorrection) + ' m');
     } else {
       let tangent = alignment.tangents.find((item) => normalizedStation < item.end.distance) ?? alignment.tangents.at(-1);
       const start = tangent.start;
       const grade = tangent.slope;
+      const distanceDifference = normalizedStation - start.distance;
+      const heightDifference = distanceDifference * grade;
       lines.push(result.type === 'before' || result.type === 'after' ? '直線勾配の延長' : '直線区間');
       lines.push('この式の見方: 基準点の高さに、基準点から計算点までの距離差 × 勾配を加えます。起点前・終点後の場合も、端の勾配をそのまま延長して計算します。');
       lines.push('記号: H は計画高、H0 は基準点の高さ、x は計算点の累加距離、x0 は基準点の累加距離、g は区間の勾配 (m/m) です。');
       lines.push('H = H0 + (x − x0) × g');
       lines.push('H0 = ' + formulaNumber(start.height) + ' m, x0 = ' + formulaNumber(start.distance) + ' m, g = ' + formulaNumber(grade));
       lines.push('H = ' + formulaNumber(start.height) + ' + (' + formulaNumber(normalizedStation) + ' − ' + formulaNumber(start.distance) + ') × ' + formulaNumber(grade));
+      lines.push('', '途中計算');
+      lines.push('1) 距離差 Δx = x − x0 = ' + formulaNumber(normalizedStation) + ' − ' + formulaNumber(start.distance) + ' = ' + formulaNumber(distanceDifference) + ' m');
+      lines.push('2) 勾配による高さ増分 ΔH = Δx × g = ' + formulaNumber(distanceDifference) + ' × ' + formulaNumber(grade) + ' = ' + formulaNumber(heightDifference) + ' m');
+      lines.push('3) 計画高 H = H0 + ΔH = ' + formulaNumber(start.height) + ' + (' + formulaNumber(heightDifference) + ') = ' + formulaNumber(start.height + heightDifference) + ' m');
     }
     lines.push('', '計画高 H = ' + fixed(result.height) + ' m');
     return lines.join('\n');
