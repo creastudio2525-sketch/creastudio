@@ -561,7 +561,7 @@
     const project = active();
     byId('project-name').textContent = project.name;
     byId('spacing-summary').textContent = '測点間隔 ' + project.spacing + ' m';
-    document.title = project.name + '｜縦断高さ計算';
+    document.title = project.name + '｜高さ計算（縦断）';
     drawProjects();
     drawControls();
     drawTargets();
