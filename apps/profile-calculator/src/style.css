@@ -1,3 +1,4 @@
+Attempting to perform the InitializeDefaultDrives operation on the 'FileSystem' provider failed.
 :root {
   font-family: Meiryo, "Hiragino Sans", "Yu Gothic", "Noto Sans JP", sans-serif;
   color: #192343;
@@ -168,7 +169,7 @@ h1 { color: var(--navy); font-size: clamp(27px, 3vw, 37px); line-height: 1.27; f
 .form-table { margin: 0 16px 15px; }
 .control-layout, .target-layout { display: grid; align-items: center; gap: 8px; }
 .control-layout { grid-template-columns: minmax(0, 1.15fr) minmax(0, 1fr) minmax(0, .9fr) 40px; }
-.target-layout { grid-template-columns: minmax(0, 1fr) minmax(0, .83fr) 40px 40px; }
+.target-layout { grid-template-columns: minmax(0, 1fr) minmax(0, .83fr) 40px 40px 40px; }
 .form-head { color: var(--muted); font-size: 12px; font-weight: 750; background: #f1f5fb; border-radius: 6px; padding: 8px 3px; }
 .form-row { padding-top: 8px; }
 input:not([type=file]) {
@@ -189,6 +190,9 @@ input[aria-invalid="true"] { border-color: var(--error); background: #fff8fa; }
 .delete-row:hover { color: var(--error); background: #fff0f3; }
 .calculator-row { min-height: 40px; width: 40px; color: var(--blue-ink); }
 .calculator-row:hover { background: #e9f6fd; color: var(--navy); }
+.copy-height { min-height: 40px; width: 40px; color: var(--blue-ink); }
+.copy-height:hover:not(:disabled) { background: #e9f6fd; color: var(--navy); }
+.copy-height:disabled { opacity: .45; cursor: not-allowed; }
 .target-height {
   display: flex;
   align-items: center;

@@ -1,3 +1,4 @@
+Attempting to perform the InitializeDefaultDrives operation on the 'FileSystem' provider failed.
 'use strict';
 
 (() => {
@@ -168,6 +169,23 @@
       const input = field(station, index === 0 ? 'SP10' : 'No.1+5.5', label + '測点', (value) => { project.targets[index] = value; });
       const height = make('output', 'target-height');
       height.setAttribute('aria-label', label + '計画高 (m)');
+      const copyHeight = make('button', 'icon-button copy-height');
+      copyHeight.type = 'button';
+      copyHeight.disabled = true;
+      copyHeight.setAttribute('aria-label', label + 'の計画高をコピー');
+      copyHeight.title = '計画高をコピー';
+      const copyIcon = make('span', 'icon i-copy');
+      copyIcon.setAttribute('aria-hidden', 'true');
+      copyHeight.append(copyIcon);
+      copyHeight.addEventListener('click', async () => {
+        if (copyHeight.disabled || !height.textContent) return;
+        try {
+          await navigator.clipboard.writeText(height.textContent.trim());
+          toast('計画高 ' + height.textContent.trim() + ' m をコピーしました。');
+        } catch {
+          toast('コピーできませんでした。ブラウザのクリップボード設定をご確認ください。');
+        }
+      });
       const error = make('p', 'inline-error target-error');
       error.id = 'target-error-' + index;
       error.hidden = true;
@@ -182,6 +200,7 @@
       row.append(
         input,
         height,
+        copyHeight,
         removeButton(label + 'を削除', () => {
           project.targets.splice(index, 1);
           persist();
@@ -565,6 +584,7 @@
       const input = row.querySelector('input');
       const error = row.querySelector('.target-error');
       row.querySelector('output').textContent = values.has(index) ? fixed(values.get(index)) : '';
+      row.querySelector('.copy-height').disabled = !values.has(index);
       error.textContent = problems.get(index) ?? '';
       error.hidden = !problems.has(index);
       if (error.hidden) {
@@ -662,6 +682,20 @@
   });
   byId('new-project').addEventListener('click', () => openProjectDialog(true));
   byId('project-settings').addEventListener('click', () => openProjectDialog(false));
+  byId('copy-project').addEventListener('click', () => {
+    const source = active();
+    const suffix = '（複写）';
+    const nameLimit = 80 - Array.from(suffix).length;
+    const name = Array.from(source.name).slice(0, nameLimit).join('') + suffix;
+    const copy = Projects.importProject(Projects.exportProject(source));
+    copy.name = name;
+    workspace.projects.push(copy);
+    workspace.activeId = copy.id;
+    persist();
+    drawProject();
+    window.scrollTo({ top: 0, behavior: 'instant' });
+    toast('路線を複写しました。');
+  });
   for (const trigger of [byId('top-help'), byId('side-help')]) {
     trigger.addEventListener('click', () => {
       closeDrawer();
