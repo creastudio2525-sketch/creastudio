@@ -275,6 +275,17 @@ dialog::backdrop { background: #18234669; }
 .help-list dt { font-weight: 800; color: var(--navy); margin-top: 11px; }
 .help-list dd { margin: 2px 0 0; color: var(--muted); }
 .toast { position: fixed; bottom: 17px; right: 17px; z-index: 10; max-width: calc(100% - 34px); background: #242854; color: #fff; font-size: 14px; border-radius: 9px; box-shadow: 0 5px 19px #1923433d; padding: 12px 15px; }
+.screen-tour-layer { position: fixed; z-index: 120; inset: 0; pointer-events: none; }
+.screen-tour-card { position: fixed; left: 50%; bottom: max(14px, env(safe-area-inset-bottom)); transform: translateX(-50%); width: min(520px, calc(100% - 24px)); padding: 15px 17px; border: 1px solid #d6dfee; border-radius: 12px; background: #fff; color: var(--ink); box-shadow: 0 10px 36px #19234345; pointer-events: auto; }
+.screen-tour-progress { display: flex; justify-content: space-between; align-items: center; gap: 12px; margin-bottom: 5px; color: var(--muted); font-size: 12px; font-weight: 750; }
+.screen-tour-end { min-height: 32px; padding: 4px 8px; border: 0; border-radius: 6px; background: transparent; color: var(--muted); font-size: 12px; font-weight: 700; }
+.screen-tour-end:hover { background: #f1f5fb; color: var(--navy); }
+.screen-tour-card h2 { margin-bottom: 5px; color: var(--navy); font-size: 18px; font-weight: 800; }
+.screen-tour-card p { color: var(--muted); font-size: 14px; line-height: 1.65; }
+.screen-tour-actions { display: flex; justify-content: flex-end; gap: 8px; margin-top: 12px; }
+.screen-tour-layer.in-calculator { position: sticky; z-index: 120; top: 0; inset: auto; width: 100%; margin: 0 0 10px; }
+.screen-tour-layer.in-calculator .screen-tour-card { position: relative; left: auto; bottom: auto; transform: none; width: 100%; margin: 0; }
+.tour-highlight { position: relative !important; z-index: 119 !important; outline: 3px solid var(--blue) !important; outline-offset: 3px; border-radius: 7px; box-shadow: 0 0 0 6px #fff, 0 0 0 100vmax #19234388 !important; }
 
 .icon { display: inline-block; position: relative; width: 16px; height: 16px; flex: none; color: inherit; }
 .icon::before, .icon::after { position: absolute; box-sizing: border-box; }
@@ -286,6 +297,7 @@ dialog::backdrop { background: #18234669; }
 .i-calculator::after { content: ""; inset: 8px 4px 3px; background: radial-gradient(circle, currentColor 1px, transparent 1.4px) 0 0 / 4px 4px; }
 .i-copy::before { content: ""; top: 1px; left: 5px; width: 9px; height: 12px; border: 1.4px solid currentColor; border-radius: 2px; background: #fff; }
 .i-copy::after { content: ""; top: 4px; left: 2px; width: 9px; height: 12px; border: 1.4px solid currentColor; border-radius: 2px; background: #fff; }
+.i-tour::before { content: "▶"; inset: 0; font: bold 12px/16px Meiryo, sans-serif; text-align: center; }
 .i-menu::before { content: ""; height: 2px; width: 16px; top: 3px; border-radius: 1px; background: currentColor; box-shadow: 0 4px currentColor, 0 8px currentColor; }
 .i-folder::before { content: ""; inset: 4px 0 1px; border: 1.5px solid currentColor; border-radius: 2px; }
 .i-folder::after { content: ""; top: 1px; left: 1px; width: 7px; height: 4px; border: 1.5px solid currentColor; border-bottom: 0; border-radius: 2px 2px 0 0; }
@@ -328,6 +340,8 @@ dialog::backdrop { background: #18234669; }
   .topbar-rule { height: 19px; }
   .app-name { font-size: 13px; }
   .top-help { display: none; }
+  .tour-start { min-width: 40px; width: 40px; padding: 7px; }
+  .tour-start-label { display: none; }
   .section-label { font-size: 12px; }
   .project-header { align-items: flex-start; flex-direction: column; gap: 9px; margin-bottom: 13px; }
   .project-actions { width: 100%; justify-content: space-between; }
@@ -362,6 +376,9 @@ dialog::backdrop { background: #18234669; }
   .metric-icon { display: none; }
   .form-table { margin-inline: 9px; }
   .control-layout, .target-layout { gap: 5px; }
+  .screen-tour-card { padding: 12px; }
+  .screen-tour-card h2 { font-size: 17px; }
+  .screen-tour-card p { font-size: 13px; }
 }
 @media (max-width: 700px) {
   .calculator-panels { grid-template-columns: minmax(0, 1fr); }

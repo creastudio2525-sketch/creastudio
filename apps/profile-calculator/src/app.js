@@ -25,6 +25,17 @@ Attempting to perform the InitializeDefaultDrives operation on the 'FileSystem' 
   const calculatorDialog = byId('calculator-dialog');
   const calculatorExpression = byId('calculator-expression');
   const menuToggle = byId('menu-toggle');
+  const screenTourLayer = byId('screen-tour-layer');
+  const screenTourSteps = [
+    { selector: '#project-name', title: '路線を確認', description: '路線名と測点間隔を確認します。路線を複写して別の条件を試すこともできます。' },
+    { selector: '#chart-title', title: '縦断図を見る', description: '入力点・計算点・縦断曲線の位置関係を図で確認できます。' },
+    { selector: '#control-title', title: '入力点を登録', description: '測点と高さを入力します。縦断曲線を使う点には曲線長も入力します。' },
+    { selector: '#target-title', title: '計算点を入力', description: '高さを求めたい測点を入力すると、計画高が自動で表示されます。' },
+    { selector: '#target-rows .calculator-row', title: '式と電卓を開く', description: '計算点の電卓アイコンから、計画高の式・途中計算・関数電卓を開きます。次へ進むと電卓を表示します。' },
+    { selector: '#calculator-keys', title: '関数電卓を操作', description: 'キーを押して式を入力できます。再生ボタンでは、計算式をキー入力する手順を見られます。' },
+    { selector: '#formula-title', title: '式と途中計算を確認', description: '計画高の式に具体的な数字を入れた途中計算を表示します。式のコピーもできます。' },
+    { selector: '#calculator-demo-play', title: '再生してみる', description: '最後にこの再生ボタンを押すと、電卓が式を順に入力して計算します。下の「再生」から実際に再生できます。' },
+  ];
   let workspace;
   let initialReadError = false;
   let newMode = false;
@@ -37,6 +48,9 @@ Attempting to perform the InitializeDefaultDrives operation on the 'FileSystem' 
   let calculatorDemoIndex = 0;
   let calculatorDemoTimer = null;
   let calculatorDemoActionRunning = false;
+  let screenTourIndex = -1;
+  let screenTourOpenedCalculator = false;
+  let screenTourTarget = null;
   const calculatorKeyButtons = new Map();
 
   function toast(message) {
@@ -415,6 +429,77 @@ Attempting to perform the InitializeDefaultDrives operation on the 'FileSystem' 
     calculatorExpression.focus();
   }
 
+  function showScreenTourStep() {
+    const inCalculator = screenTourIndex >= 5;
+    if (inCalculator && !calculatorDialog.open) {
+      screenTourOpenedCalculator = true;
+      openCalculator(0);
+    } else if (!inCalculator && screenTourOpenedCalculator && calculatorDialog.open) {
+      screenTourOpenedCalculator = false;
+      document.body.append(screenTourLayer);
+      screenTourLayer.classList.remove('in-calculator');
+      calculatorDialog.close();
+    }
+    if (inCalculator) {
+      calculatorDialog.insertBefore(screenTourLayer, byId('calculator-panels'));
+      screenTourLayer.classList.add('in-calculator');
+    } else {
+      document.body.append(screenTourLayer);
+      screenTourLayer.classList.remove('in-calculator');
+    }
+
+    screenTourLayer.hidden = false;
+    screenTourTarget?.classList.remove('tour-highlight');
+    const step = screenTourSteps[screenTourIndex];
+    screenTourTarget = document.querySelector(step.selector) ?? byId(inCalculator ? 'calculator-title' : 'project-name');
+    screenTourTarget.classList.add('tour-highlight');
+    byId('screen-tour-step').textContent = (screenTourIndex + 1) + ' / ' + screenTourSteps.length;
+    byId('screen-tour-title').textContent = step.title;
+    byId('screen-tour-description').textContent = step.description;
+    byId('screen-tour-back').disabled = screenTourIndex === 0;
+    byId('screen-tour-next').textContent = screenTourIndex === screenTourSteps.length - 1 ? '▶ 再生' : '次へ';
+    requestAnimationFrame(() => screenTourTarget?.scrollIntoView({ behavior: 'smooth', block: 'center', inline: 'nearest' }));
+    byId('screen-tour-next').focus({ preventScroll: true });
+  }
+
+  function finishScreenTour(play = false) {
+    screenTourTarget?.classList.remove('tour-highlight');
+    screenTourTarget = null;
+    screenTourLayer.hidden = true;
+    screenTourIndex = -1;
+    const playButton = byId('calculator-demo-play');
+    if (play && calculatorDialog.open && !playButton.disabled) {
+      playButton.focus({ preventScroll: true });
+      playButton.click();
+    } else if (play && playButton.disabled) {
+      toast('再生するには、測点と高さが有効な入力点を2点以上登録してください。');
+    }
+    if (calculatorDialog.open) (playButton.disabled ? calculatorExpression : playButton).focus({ preventScroll: true });
+    else byId('screen-tour-start').focus({ preventScroll: true });
+  }
+
+  function startScreenTour() {
+    pauseCalculatorDemo();
+    screenTourOpenedCalculator = false;
+    screenTourIndex = 0;
+    showScreenTourStep();
+  }
+
+  function advanceScreenTour() {
+    if (screenTourIndex === screenTourSteps.length - 1) {
+      finishScreenTour(true);
+      return;
+    }
+    screenTourIndex++;
+    showScreenTourStep();
+  }
+
+  function goBackInScreenTour() {
+    if (screenTourIndex <= 0) return;
+    screenTourIndex--;
+    showScreenTourStep();
+  }
+
   function evaluateExpression(raw) {
     const normalized = raw.normalize('NFKC').replace(/[×]/g, '*').replace(/[÷]/g, '/').replace(/[−]/g, '-').replace(/π/g, 'pi');
     const tokens = normalized.match(/(?:\d+(?:\.\d*)?|\.\d+)(?:e[+-]?\d+)?|[a-zA-Z]+|[()+\-*/^,]/g) ?? [];
@@ -513,6 +598,10 @@ Attempting to perform the InitializeDefaultDrives operation on the 'FileSystem' 
   byId('calculator-demo-pause').addEventListener('click', () => { pauseCalculatorDemo(); showDemoProgress('一時停止中'); });
   byId('calculator-demo-forward').addEventListener('click', stepCalculatorDemoForward);
   byId('calculator-equals').addEventListener('click', runCalculator);
+  byId('screen-tour-start').addEventListener('click', startScreenTour);
+  byId('screen-tour-back').addEventListener('click', goBackInScreenTour);
+  byId('screen-tour-next').addEventListener('click', advanceScreenTour);
+  byId('screen-tour-end').addEventListener('click', () => finishScreenTour(false));
   calculatorExpression.addEventListener('keydown', (event) => { if (event.key === 'Enter') { event.preventDefault(); runCalculator(); } });
   calculatorExpression.addEventListener('input', () => { resizeCalculatorExpression(); delete calculatorExpression.dataset.result; cancelCalculatorDemoForManualInput(); });
   byId('copy-formula').addEventListener('click', () => copyText(byId('formula-text').textContent, byId('formula-copy-status')));
@@ -522,6 +611,11 @@ Attempting to perform the InitializeDefaultDrives operation on the 'FileSystem' 
   });
   calculatorDialog.addEventListener('close', () => {
     pauseCalculatorDemo();
+    if (screenTourLayer.parentElement === calculatorDialog) {
+      document.body.append(screenTourLayer);
+      screenTourLayer.classList.remove('in-calculator');
+    }
+    if (screenTourIndex >= 5) finishScreenTour(false);
     const input = targetRows.children[calculatorTargetIndex]?.querySelector('input');
     input?.focus();
   });

@@ -17,6 +17,7 @@ Attempting to perform the InitializeDefaultDrives operation on the 'FileSystem' 
     <span class="topbar-rule" aria-hidden="true"></span>
     <span class="app-name">高さ計算（縦断）</span>
     <button type="button" id="top-help" class="button plain top-help"><span class="icon i-help" aria-hidden="true"></span>使い方</button>
+    <button type="button" id="screen-tour-start" class="button secondary tour-start" aria-label="画面ツアーを開始"><span class="icon i-tour" aria-hidden="true"></span><span class="tour-start-label">画面ツアー</span></button>
   </header>
 
   <div class="workspace">
@@ -160,6 +161,17 @@ Attempting to perform the InitializeDefaultDrives operation on the 'FileSystem' 
     </div>
     <footer class="dialog-footer"><button type="button" class="button secondary close-dialog">閉じる</button></footer>
   </dialog>
+  <div id="screen-tour-layer" class="screen-tour-layer" hidden>
+    <section class="screen-tour-card" aria-labelledby="screen-tour-title" aria-live="polite">
+      <div class="screen-tour-progress"><span id="screen-tour-step"></span><button type="button" id="screen-tour-end" class="screen-tour-end">終了</button></div>
+      <h2 id="screen-tour-title"></h2>
+      <p id="screen-tour-description"></p>
+      <div class="screen-tour-actions">
+        <button type="button" id="screen-tour-back" class="button secondary small">戻る</button>
+        <button type="button" id="screen-tour-next" class="button primary small">次へ</button>
+      </div>
+    </section>
+  </div>
   <div id="toast" class="toast" role="status" hidden></div>
   <script>/*{{SCRIPT}}*/</script>
 </body>
