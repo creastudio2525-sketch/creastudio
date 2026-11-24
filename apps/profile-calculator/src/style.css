@@ -283,7 +283,7 @@ dialog::backdrop { background: #18234669; }
 .screen-tour-card h2 { margin-bottom: 5px; color: var(--navy); font-size: 18px; font-weight: 800; }
 .screen-tour-card p { color: var(--muted); font-size: 14px; line-height: 1.65; }
 .screen-tour-actions { display: flex; justify-content: flex-end; gap: 8px; margin-top: 12px; }
-.screen-tour-layer.in-calculator { position: sticky; z-index: 120; top: 0; inset: auto; width: 100%; margin: 0 0 10px; }
+.screen-tour-layer.in-calculator { position: sticky; z-index: 120; top: 0; width: 100%; margin: 0 0 10px; }
 .screen-tour-layer.in-calculator .screen-tour-card { position: relative; left: auto; bottom: auto; transform: none; width: 100%; margin: 0; }
 .tour-highlight { position: relative !important; z-index: 119 !important; outline: 3px solid var(--blue) !important; outline-offset: 3px; border-radius: 7px; box-shadow: 0 0 0 6px #fff, 0 0 0 100vmax #19234388 !important; }
 
